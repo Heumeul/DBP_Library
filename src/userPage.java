@@ -1,12 +1,13 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class userPage {
-    public static void main(String userName) {
+    public static void main(int userId, String userName) {
         JFrame frame = new JFrame("DEU Library");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 500);
@@ -30,7 +31,7 @@ public class userPage {
             @Override
             public void mouseClicked(MouseEvent e) {
                 frame.dispose();
-                mainPage.main(userName);
+                mainPage.main(userId, userName);
             }
         });
 
@@ -45,20 +46,50 @@ public class userPage {
         JTable overdueTable = new JTable(overdueModel);
         JScrollPane overdueScrollPane = new JScrollPane(overdueTable); // 스크롤 추가
 
-        // 샘플 데이터 추가
-        overdueModel.addRow(new Object[]{"20231234", "강아지똥", "김철수", "2023-12-01", "2023-12-08"});
-        overdueModel.addRow(new Object[]{"20231235", "강아지똥2", "박영희", "2023-11-30", "2023-12-07"});
-
         userPanel.add(overdueScrollPane, BorderLayout.CENTER);
 
         JButton returnButton = new JButton("반납");
         returnButton.setBounds(13, 400, 360, 30);
         frame.add(returnButton);
 
+        // DB에서 데이터를 가져와 JTable에 추가
+        try {
+            Connect dbConnection = new Connect();
+            dbConnection.DB_Connect();
+
+            ResultSet rs;
+
+            // userId 길이에 따라 교직원 또는 학생 데이터 처리
+            if (String.valueOf(userId).length() == 5) {
+                // 교직원 데이터 가져오기
+                rs = dbConnection.getStaffLoanData(userId);
+            } else if (String.valueOf(userId).length() == 6) {
+                // 학생 데이터 가져오기
+                rs = dbConnection.getStudentLoanData(userId);
+            } else {
+                JOptionPane.showMessageDialog(frame, "잘못된 ID 형식입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                frame.dispose();
+                return;
+            }
+
+            // ResultSet 데이터를 테이블에 추가
+            while (rs != null && rs.next()) {
+                overdueModel.addRow(new Object[]{
+                        rs.getInt("대출번호"),    // 대출번호
+                        rs.getString("도서명"),   // 도서명
+                        rs.getString("저자"),    // 저자
+                        rs.getDate("대출일자"),   // 대출일자
+                        rs.getDate("반납일자")    // 반납일자
+                });
+            }
+        } catch (SQLException e) {
+            System.out.println("Error loading table data: " + e.getMessage());
+        }
+
         returnButton.addActionListener(e -> {
             int selectedRow = overdueTable.getSelectedRow();
             if (selectedRow != -1) {
-                overdueModel.removeRow(selectedRow); // 선택된 행 삭제
+                overdueModel.removeRow(selectedRow);
                 JOptionPane.showMessageDialog(frame, "선택된 도서가 반납되었습니다.");
             } else {
                 JOptionPane.showMessageDialog(frame, "반납할 도서를 선택하세요.");

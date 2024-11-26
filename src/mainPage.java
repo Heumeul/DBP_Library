@@ -7,7 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class mainPage {
-    public static void main(String userName) {
+    public static void main(int userId, String userName) {
         JFrame frame = new JFrame("DEU Library");
         frame.setSize(400, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -22,7 +22,7 @@ public class mainPage {
             @Override
             public void actionPerformed(ActionEvent e) {
                 frame.dispose(); // 현재 창 닫기
-                userPage.main(userName); // userPage 열기
+                userPage.main(userId, userName); // userPage 열기
             }
         });
 

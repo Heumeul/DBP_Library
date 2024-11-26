@@ -20,6 +20,7 @@ public class login {
         studentButton.setBounds(110, 130, 60, 30);
         studentButton.setFont(new Font("맑은 고딕", Font.BOLD, 15));
         studentButton.setSelected(true);
+
         JRadioButton staffButton = new JRadioButton("교직원");
         staffButton.setBounds(200, 130, 80, 30);
         staffButton.setFont(new Font("맑은 고딕", Font.BOLD, 15));
@@ -31,13 +32,12 @@ public class login {
         frame.add(studentButton);
         frame.add(staffButton);
 
-        // 학번 입력 필드(default)
         JLabel idLabel = new JLabel("학번");
         idLabel.setBounds(70, 200, 80, 30);
         idLabel.setFont(new Font("맑은 고딕", Font.BOLD, 15));
         frame.add(idLabel);
 
-        JPasswordField idField=new JPasswordField();
+        JPasswordField idField = new JPasswordField();
         idField.setBounds(120, 200, 180, 30);
         frame.add(idField);
 
@@ -50,37 +50,50 @@ public class login {
         nameField.setBounds(120, 250, 180, 30);
         frame.add(nameField);
 
+        studentButton.addActionListener(e -> {
+            idLabel.setText("학번");
+            idField.setText(null);
+            nameField.setText(null);
+        });
+
+        staffButton.addActionListener(e -> {
+            idLabel.setText("교번");
+            idField.setText(null);
+            nameField.setText(null);
+        });
+
         JButton loginButton = new JButton("로그인");
         loginButton.setBounds(100, 320, 200, 40);
         frame.add(loginButton);
 
-        // 학생 라디오 버튼 클릭시
-        studentButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                idLabel.setText("학번");
-                idField.setText(null);
-                nameField.setText(null);
-            }
-        });
+        Connect dbConnection = new Connect();
+        dbConnection.DB_Connect();
 
-        // 교직원 라디오 버튼 클릭시
-        staffButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                idLabel.setText("교번");
-                idField.setText(null);
-                nameField.setText(null);
-            }
-        });
+        loginButton.addActionListener(e -> {
+            try {
+                String idText = new String(idField.getPassword());
+                Integer userId = Integer.parseInt(idText);
+                String userName = nameField.getText();
 
-        // 로그인 버튼 클릭시 개인 페이지로 이동
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String userName=nameField.getText();
-                frame.dispose();
-                mainPage.main(userName);
+                boolean loginSuccess = false;
+                String userType = "";
+                if (studentButton.isSelected()) {
+                    loginSuccess = dbConnection.validateStudent(userId, userName);
+                    userType = "학생";
+                } else if (staffButton.isSelected()) {
+                    loginSuccess = dbConnection.validateStaff(userId, userName);
+                    userType = "교직원";
+                }
+
+                if (loginSuccess) {
+                    JOptionPane.showMessageDialog(frame, "로그인 성공!");
+                    frame.dispose();
+                    mainPage.main(userId, userName);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "학번(교번)과 이름을 확인하세요.");
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "학번(교번)은 숫자로 입력해야 합니다.", "입력 오류", JOptionPane.ERROR_MESSAGE);
             }
         });
 
