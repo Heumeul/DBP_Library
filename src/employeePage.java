@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class employeePage {
-    public static void main(String userName) {
+    public static void main(String enteredId, String userName) {
         JFrame frame = new JFrame("DBP Library");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 500);
