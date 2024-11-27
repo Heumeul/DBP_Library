@@ -5,8 +5,29 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class mainPage {
+    private static int getNextLoanId(Connection con) throws SQLException {
+        String query = "SELECT MAX(대출번호) AS MAX_LOAN_ID " +
+                "FROM ( " +
+                "    SELECT MAX(대출번호) AS 대출번호 FROM 대출1 " +
+                "    UNION ALL " +
+                "    SELECT MAX(대출번호) AS 대출번호 FROM 대출2 " +
+                ") 합계";
+
+        PreparedStatement pstmt = con.prepareStatement(query);
+        ResultSet rs = pstmt.executeQuery();
+
+        int nextLoanId = 1; // 기본값: 첫 번째 대출번호
+        if (rs.next() && rs.getInt("MAX_LOAN_ID") > 0) {
+            nextLoanId = rs.getInt("MAX_LOAN_ID") + 1; // 최대값 + 1
+        }
+        return nextLoanId;
+    }
     public static void main(int userId, String userName) {
         JFrame frame = new JFrame("DEU Library");
         frame.setSize(400, 500);
@@ -95,5 +116,134 @@ public class mainPage {
         frame.add(loanButton);
 
         frame.setVisible(true);
+
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String bookName = bookNameField.getText().trim();
+                String author = authorField.getText().trim();
+
+                // 테이블 초기화
+                tableModel.setRowCount(0);
+
+                // Connect 클래스 사용
+                Connect dbConnect = new Connect();
+                dbConnect.DB_Connect(); // DB 연결
+
+                try {
+                    // 동적 쿼리 생성
+                    String query = "SELECT * FROM 도서 WHERE 1=1";
+                    if (!bookName.isEmpty()) {
+                        query += " AND 도서명 LIKE ?";
+                    }
+                    if (!author.isEmpty()) {
+                        query += " AND 저자 LIKE ?";
+                    }
+
+                    PreparedStatement pstmt = dbConnect.con.prepareStatement(query);
+
+                    // PreparedStatement에 동적 값 설정
+                    int index = 1;
+                    if (!bookName.isEmpty()) {
+                        pstmt.setString(index++, "%" + bookName + "%");
+                    }
+                    if (!author.isEmpty()) {
+                        pstmt.setString(index++, "%" + author + "%");
+                    }
+
+                    ResultSet rs = pstmt.executeQuery();
+
+                    if (!rs.isBeforeFirst()) { // 결과가 없을 경우
+                        JOptionPane.showMessageDialog(frame, "검색 결과가 없습니다.", "알림", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+
+                    while (rs.next()) {
+                        Object[] row = {
+                                rs.getInt("도서번호"),
+                                rs.getString("분야"),
+                                rs.getString("도서명"),
+                                rs.getString("저자"),
+                                rs.getString("출판사"),
+                                rs.getString("도서상태")
+                        };
+                        tableModel.addRow(row);
+                    }
+
+                    // UI 업데이트
+                    SwingUtilities.invokeLater(() -> tableModel.fireTableDataChanged());
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(frame, "검색 중 오류가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dbConnect.DB_Disconnect(); // DB 연결 종료
+                }
+            }
+        });
+        //대출 버튼
+        loanButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow == -1) {
+                    JOptionPane.showMessageDialog(frame, "대출할 도서를 선택하세요.", "알림", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // 테이블에서 선택된 도서번호 가져오기
+                int bookId = (int) table.getValueAt(selectedRow, 0);
+
+                // Connect 클래스 사용
+                Connect dbConnect = new Connect();
+                dbConnect.DB_Connect();
+
+                try {
+                    String loanTable;
+                    String idColumn;
+                    if (String.valueOf(userId).length() == 5) {
+                        loanTable = "대출2";
+                        idColumn = "교번";
+                    } else if (String.valueOf(userId).length() == 6) {
+                        loanTable = "대출1";
+                        idColumn = "학번";
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "잘못된 ID 형식입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    // 최대 대출번호 가져오기
+                    int loanId = getNextLoanId(dbConnect.con);
+
+                    // 대출 데이터 삽입
+                    String insertQuery = "INSERT INTO " + loanTable + " (대출번호, " + idColumn + ", 도서번호, 대출일자, 반납일자, 연체기한) " +
+                            "VALUES (?, ?, ?, SYSDATE, NULL, NULL)";
+
+                    PreparedStatement pstmt = dbConnect.con.prepareStatement(insertQuery);
+                    pstmt.setInt(1, loanId);
+                    pstmt.setInt(2, userId);
+                    pstmt.setInt(3, bookId);
+
+                    pstmt.executeUpdate();
+
+                    JOptionPane.showMessageDialog(frame, "도서 대출이 성공적으로 완료되었습니다.", "대출 완료", JOptionPane.INFORMATION_MESSAGE);
+                } catch (SQLException ex) {
+                    // 트리거에서 발생한 예외 처리
+                    String errorMessage = ex.getMessage();
+
+                    // ORA-20001 또는 ORA-20002 등의 사용자 정의 예외 코드 처리
+                    if (errorMessage.contains("ORA-20002")) {
+                        JOptionPane.showMessageDialog(frame, "최대 대출 권수를 초과하여 대출이 불가능합니다.", "대출 불가", JOptionPane.WARNING_MESSAGE);
+                    } else if (errorMessage.contains("ORA-20003") || errorMessage.contains("ORA-20001")) {
+                        JOptionPane.showMessageDialog(frame, "연체 도서가 있어 대출이 불가능합니다.", "대출 불가", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "대출 처리 중 알 수 없는 오류가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                    }
+                    ex.printStackTrace();
+                } finally {
+                    dbConnect.DB_Disconnect();
+                }
+            }
+        });
+
     }
 }
