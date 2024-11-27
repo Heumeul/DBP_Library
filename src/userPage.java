@@ -20,9 +20,8 @@ public class userPage {
         titleLabel.setBounds(50, 30, 300, 30);
         frame.add(titleLabel);
 
-        // 뒤로가기 버튼
-        JLabel back = new JLabel("<");
-        back.setBounds(13, 10, 45, 30);
+        JLabel back = new JLabel("<이전");
+        back.setBounds(13, 10, 60, 30);
         back.setCursor(new Cursor(Cursor.HAND_CURSOR));
         frame.add(back);
 
@@ -41,7 +40,7 @@ public class userPage {
         frame.add(userPanel);
 
         // 테이블 생성
-        String[] overdueColumns = {"대출번호", "도서명", "저자", "대출일자", "반납일자"};
+        String[] overdueColumns = {"대출번호", "도서명", "저자", "대출일자", "연체기한"};
         DefaultTableModel overdueModel = new DefaultTableModel(overdueColumns, 0);
         JTable overdueTable = new JTable(overdueModel);
         JScrollPane overdueScrollPane = new JScrollPane(overdueTable); // 스크롤 추가
@@ -52,19 +51,15 @@ public class userPage {
         returnButton.setBounds(13, 400, 360, 30);
         frame.add(returnButton);
 
-        // DB에서 데이터를 가져와 JTable에 추가
         try {
             Connect dbConnection = new Connect();
             dbConnection.DB_Connect();
 
             ResultSet rs;
 
-            // userId 길이에 따라 교직원 또는 학생 데이터 처리
             if (String.valueOf(userId).length() == 5) {
-                // 교직원 데이터 가져오기
                 rs = dbConnection.getStaffLoanData(userId);
             } else if (String.valueOf(userId).length() == 6) {
-                // 학생 데이터 가져오기
                 rs = dbConnection.getStudentLoanData(userId);
             } else {
                 JOptionPane.showMessageDialog(frame, "잘못된 ID 형식입니다.", "오류", JOptionPane.ERROR_MESSAGE);
@@ -75,16 +70,19 @@ public class userPage {
             // ResultSet 데이터를 테이블에 추가
             while (rs != null && rs.next()) {
                 overdueModel.addRow(new Object[]{
-                        rs.getInt("대출번호"),    // 대출번호
-                        rs.getString("도서명"),   // 도서명
-                        rs.getString("저자"),    // 저자
-                        rs.getDate("대출일자"),   // 대출일자
-                        rs.getDate("반납일자")    // 반납일자
+                        rs.getInt("대출번호"),
+                        rs.getString("도서명"),
+                        rs.getString("저자"),
+                        rs.getDate("대출일자"),
+                        rs.getDate("연체기한")
                 });
             }
         } catch (SQLException e) {
             System.out.println("Error loading table data: " + e.getMessage());
         }
+
+        Connect dbConnection = new Connect();
+        dbConnection.DB_Connect(); // DB 연결 초기화
 
         returnButton.addActionListener(e -> {
             int selectedRow = overdueTable.getSelectedRow();
