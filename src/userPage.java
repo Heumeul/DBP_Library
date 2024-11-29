@@ -74,7 +74,7 @@ public class userPage {
                         rs.getString("도서명"),
                         rs.getString("저자"),
                         rs.getDate("대출일자"),
-                        rs.getDate("연체기한")
+                        rs.getInt("연체기한")
                 });
             }
         } catch (SQLException e) {
@@ -82,13 +82,20 @@ public class userPage {
         }
 
         Connect dbConnection = new Connect();
-        dbConnection.DB_Connect(); // DB 연결 초기화
+        dbConnection.DB_Connect();
 
         returnButton.addActionListener(e -> {
             int selectedRow = overdueTable.getSelectedRow();
             if (selectedRow != -1) {
-                overdueModel.removeRow(selectedRow);
-                JOptionPane.showMessageDialog(frame, "선택된 도서가 반납되었습니다.");
+                int loanId = (int) overdueTable.getValueAt(selectedRow, 0);
+                boolean isReturned = dbConnection.returnBook(loanId);
+
+                if (isReturned) {
+                    overdueModel.removeRow(selectedRow);
+                    JOptionPane.showMessageDialog(frame, "선택된 도서가 성공적으로 반납되었습니다.");
+                } else {
+                    JOptionPane.showMessageDialog(frame, "도서 반납 처리에 실패했습니다.");
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "반납할 도서를 선택하세요.");
             }
