@@ -33,7 +33,7 @@ public class employeeLogin {
         loginButton.setFont(new Font("맑은 고딕", Font.BOLD, 10)); // 폰트 크기 변경
         frame.add(loginButton);
 
-        // 로그인 버튼 클릭시 관리자 페이지로 이동
+        // 로그인 버튼 클릭시 관리자 페이지로 이동 (PreparedStatement)
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

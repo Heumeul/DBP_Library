@@ -5,12 +5,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class mainPage {
+    //대출 번호 생성 preparedStatement
     private static int getNextLoanId(Connection con) throws SQLException {
         String query = "SELECT MAX(대출번호) AS MAX_LOAN_ID " +
                 "FROM ( " +
@@ -117,6 +115,8 @@ public class mainPage {
 
         frame.setVisible(true);
 
+
+        //도서 검색 Statement
         searchButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -134,24 +134,15 @@ public class mainPage {
                     // 동적 쿼리 생성
                     String query = "SELECT * FROM 도서 WHERE 1=1";
                     if (!bookName.isEmpty()) {
-                        query += " AND 도서명 LIKE ?";
+                        query += " AND 도서명 LIKE '%" + bookName + "%'";
                     }
                     if (!author.isEmpty()) {
-                        query += " AND 저자 LIKE ?";
+                        query += " AND 저자 LIKE '%" + author + "%'";
                     }
 
-                    PreparedStatement pstmt = dbConnect.con.prepareStatement(query);
-
-                    // PreparedStatement에 동적 값 설정
-                    int index = 1;
-                    if (!bookName.isEmpty()) {
-                        pstmt.setString(index++, "%" + bookName + "%");
-                    }
-                    if (!author.isEmpty()) {
-                        pstmt.setString(index++, "%" + author + "%");
-                    }
-
-                    ResultSet rs = pstmt.executeQuery();
+                    // Statement로 실행
+                    Statement stmt = dbConnect.con.createStatement();
+                    ResultSet rs = stmt.executeQuery(query);
 
                     if (!rs.isBeforeFirst()) { // 결과가 없을 경우
                         JOptionPane.showMessageDialog(frame, "검색 결과가 없습니다.", "알림", JOptionPane.INFORMATION_MESSAGE);
@@ -169,18 +160,14 @@ public class mainPage {
                         };
                         tableModel.addRow(row);
                     }
-
-                    // UI 업데이트
-                    SwingUtilities.invokeLater(() -> tableModel.fireTableDataChanged());
                 } catch (SQLException ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(frame, "검색 중 오류가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                 } finally {
-                    dbConnect.DB_Disconnect(); // DB 연결 종료
+                    dbConnect.DB_Disconnect(); // 연결 해제
                 }
             }
         });
-        //대출 버튼
+        //대출 버튼 (Prepared Statement)
         loanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

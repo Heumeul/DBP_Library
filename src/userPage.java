@@ -74,7 +74,7 @@ public class userPage {
                         rs.getString("도서명"),
                         rs.getString("저자"),
                         rs.getDate("대출일자"),
-                        rs.getDate("연체기한")
+                        rs.getInt("연체기한")
                 });
             }
         } catch (SQLException e) {
