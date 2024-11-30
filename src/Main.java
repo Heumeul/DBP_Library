@@ -4,18 +4,6 @@ public class Main {
         connect.DB_Connect();           // DB 연결 메서드 호출
         login.main(null);
 
-
-
-
-
-
-
-
-
-
-
-
-
         connect.DB_Disconnect();        // DB 연결해제
     }
 }
