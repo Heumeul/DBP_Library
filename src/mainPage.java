@@ -11,22 +11,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class mainPage {
-    private static int getNextLoanId(Connection con) throws SQLException {
-        String query = "SELECT MAX(대출번호) AS MAX_LOAN_ID " +
-                "FROM ( " +
-                "    SELECT MAX(대출번호) AS 대출번호 FROM 대출1 " +
-                "    UNION ALL " +
-                "    SELECT MAX(대출번호) AS 대출번호 FROM 대출2 " +
-                ") 합계";
+    private static int getNextLoanId(Connection con, int userId) throws SQLException {
+        // 사용자 ID의 길이를 계산 (int를 String으로 변환한 후 길이 계산)
+        boolean isStudent = String.valueOf(userId).length() == 6; // 학번은 6자리, 교번은 5자리
 
-        PreparedStatement pstmt = con.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery();
+        // 쿼리 작성
+        String query = "SELECT NVL(MAX(대출번호), 0) AS MAX_LOAN_ID " +
+                "FROM " + (isStudent ? "대출1" : "대출2") + " " +
+                "WHERE " + (isStudent ? "학번" : "교번") + " = ?";
 
-        int nextLoanId = 1; // 기본값: 첫 번째 대출번호
-        if (rs.next() && rs.getInt("MAX_LOAN_ID") > 0) {
-            nextLoanId = rs.getInt("MAX_LOAN_ID") + 1; // 최대값 + 1
+        // 초기값 설정
+        int nextLoanId = 1;
+
+        // 자원 해제 보장 (try-with-resources 사용)
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+            pstmt.setInt(1, userId); // 사용자 ID를 int로 설정
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    nextLoanId = rs.getInt("MAX_LOAN_ID") + 1; // 최대값 + 1
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("대출번호 생성 중 오류 발생: " + e.getMessage());
+            throw e; // 에러 재발생
         }
-        return nextLoanId;
+
+        return nextLoanId; // 결과 반환
     }
     public static void main(int userId, String userName) {
         JFrame frame = new JFrame("DEU Library");
@@ -212,7 +222,7 @@ public class mainPage {
                     }
 
                     // 최대 대출번호 가져오기
-                    int loanId = getNextLoanId(dbConnect.con);
+                    int loanId = getNextLoanId(dbConnect.con, userId);
 
                     // 대출 데이터 삽입
                     String insertQuery = "INSERT INTO " + loanTable + " (대출번호, " + idColumn + ", 도서번호, 대출일자, 반납일자, 연체기한) " +
