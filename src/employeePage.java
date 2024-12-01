@@ -37,21 +37,25 @@ public class employeePage {
         frame.setSize(400, 500);
         frame.setLayout(new BorderLayout());
 
-        String titleSuffix = "님 근로 Page";
-
+        // 제목 패널 생성
         JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(new BorderLayout());
-        titlePanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0)); // 여백 추가
+        titlePanel.setLayout(null); // null 레이아웃 사용
+        titlePanel.setPreferredSize(new Dimension(frame.getWidth(), 50));
 
-        JLabel titleLabel = new JLabel(userName + titleSuffix, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("돋움", Font.BOLD, 16));
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        // 제목 레이블 설정
+        JLabel titleLabel = new JLabel(userName + "님 근로 Page", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("돋움", Font.BOLD, 18));
+        titleLabel.setBounds(100, 10, 200, 30);
+        titlePanel.add(titleLabel);
 
+        // 로그아웃 레이블 설정
         JLabel logoutLabel = new JLabel("<html><u>로그아웃</u></html>");
         logoutLabel.setForeground(Color.BLACK);
+        logoutLabel.setFont(new Font("돋움", Font.PLAIN, 12));
         logoutLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutLabel.setBounds(frame.getWidth() - 110, 10, 80, 30);
         logoutLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        titlePanel.add(logoutLabel, BorderLayout.EAST);
+        titlePanel.add(logoutLabel);
 
         // 로그아웃 클릭 시 첫 로그인 화면으로 이동
         logoutLabel.addMouseListener(new MouseAdapter() {
@@ -66,14 +70,14 @@ public class employeePage {
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        // 근무 정보 탭
+        // 근로 정보 탭
         JPanel workInfoPanel = new JPanel();
         workInfoPanel.setLayout(null);
 
         JLabel workDate = new JLabel("근무일자: ");
-        workDate.setBounds(13, 10, 60, 30);
+        workDate.setBounds(13, 20, 60, 30);
         JLabel toDay = new JLabel();
-        toDay.setBounds(70, 10, 80, 30);
+        toDay.setBounds(70, 20, 80, 30);
         workInfoPanel.add(workDate);
         workInfoPanel.add(toDay);
 
@@ -82,19 +86,19 @@ public class employeePage {
         toDay.setText(currentDate.format(formatter));
 
         JLabel workHours = new JLabel("일일근무시간");
-        workHours.setBounds(150, 10, 80, 30);
+        workHours.setBounds(150, 20, 80, 30);
         workInfoPanel.add(workHours);
 
         JComboBox<Integer> workTimes = new JComboBox<>(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
-        workTimes.setBounds(230, 10, 50, 30);
+        workTimes.setBounds(230, 20, 50, 30);
         workInfoPanel.add(workTimes);
 
         JButton addInfoButton = new JButton("등록");
-        addInfoButton.setBounds(300, 10, 60, 30);
+        addInfoButton.setBounds(300, 20, 60, 30);
         workInfoPanel.add(addInfoButton);
         loadWorkInfo(dbConnect.con, enteredId); // 새로고침 호출
 
-        // 근무 정보 테이블 생성
+        // 근로 정보 테이블 생성
         JTable workInfoTable = new JTable(workInfoModel);
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
@@ -117,7 +121,7 @@ public class employeePage {
         workInfoScrollPane.setBounds(15, 70, 350, 300);
         workInfoPanel.add(workInfoScrollPane);
 
-        tabbedPane.addTab("근무정보", workInfoPanel);
+        tabbedPane.addTab("근로정보", workInfoPanel);
 
         frame.add(tabbedPane, BorderLayout.CENTER);
         frame.setVisible(true);
@@ -210,27 +214,6 @@ public class employeePage {
 
         tabbedPane.addTab("월급조회", salaryPanel);
 
-
-        // 연체자조회 탭
-        JPanel overduePanel = new JPanel();
-        overduePanel.setLayout(new BorderLayout());
-
-        String[] overdueColumns = {"학번/교번", "연체자명", "연체일", "대출불가일"};
-        DefaultTableModel overdueModel = new DefaultTableModel(overdueColumns, 0);
-        JTable overdueTable = new JTable(overdueModel);
-        JScrollPane overdueScrollPane = new JScrollPane(overdueTable);
-
-        overdueModel.addRow(new Object[]{"20231234", "김철수", "2023-11-20", "2023-12-01"});
-        overdueModel.addRow(new Object[]{"20231235", "박영희", "2023-11-15", "2023-11-30"});
-
-        overduePanel.add(overdueScrollPane, BorderLayout.CENTER);
-
-        tabbedPane.addTab("연체자조회", overduePanel);
-
-        frame.add(tabbedPane, BorderLayout.CENTER);
-
-        frame.setVisible(true);
-
         //근로정보 등록 및 DB 업데이트
         addInfoButton.addActionListener(e -> {
             int selectedWorkHours = (int) workTimes.getSelectedItem(); // 선택된 근무시간 가져오기
@@ -277,7 +260,7 @@ public class employeePage {
                         String.format("%,d원", dailySalary) // 숫자 포맷팅
                 });
 
-                JOptionPane.showMessageDialog(null, "근무 정보가 성공적으로 등록되었습니다.", "등록 성공", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, "근로 정보가 성공적으로 등록되었습니다.", "등록 성공", JOptionPane.INFORMATION_MESSAGE);
 
                 pstmt.close();
                 dbConnect.DB_Disconnect();
@@ -286,8 +269,81 @@ public class employeePage {
                 JOptionPane.showMessageDialog(null, "등록 중 오류가 발생했습니다: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
             }
         });
-    }
 
+
+        // 연체자 조회 탭
+        JPanel overduePanel = new JPanel();
+        overduePanel.setLayout(new BorderLayout());
+
+        DefaultTableModel overdueModel = new DefaultTableModel(
+                new String[]{"학번/교번", "연체자명", "대출일자", "연체기한"}, 0
+        );
+
+        JTable overdueTable = new JTable(overdueModel);
+        JScrollPane overdueScrollPane = new JScrollPane(overdueTable);
+        overduePanel.add(overdueScrollPane, BorderLayout.CENTER);
+
+        if (centerRenderer == null) {
+            centerRenderer = new DefaultTableCellRenderer();
+            centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        }
+
+        overdueTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // 학번/교번
+        overdueTable.getColumnModel().getColumn(1).setCellRenderer(centerRenderer); // 연체자명
+        overdueTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer); // 대출일자
+        overdueTable.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // 연체기한
+
+
+        // 조회 버튼 생성 및 추가
+        JButton refreshButton = new JButton("조회");
+        refreshButton.setBounds(150, 10, 100, 30);
+        overduePanel.add(refreshButton, BorderLayout.SOUTH);
+
+        tabbedPane.addTab("연체자조회", overduePanel);
+
+        // 연체자 조회 버튼 클릭 이벤트
+        refreshButton.addActionListener(e -> {
+            ResultSet rs = null;
+            try {
+                dbConnect.DB_Connect();
+
+                // 기존 테이블 초기화
+                overdueModel.setRowCount(0);
+
+                // 저장 프로시저 호출하여 데이터 가져오기
+                rs = dbConnect.getOverdueUsers();
+                if (rs == null) {
+                    JOptionPane.showMessageDialog(null, "저장 프로시저 실행 결과가 없습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                boolean hasData = false;
+                while (rs.next()) {
+                    hasData = true;
+                    overdueModel.addRow(new Object[]{
+                            rs.getString("학번_교번"),
+                            rs.getString("사용자명"),
+                            rs.getDate("대출일자"),
+                            rs.getInt("연체기한") + "일"
+                    });
+                }
+
+                if (!hasData) {
+                    JOptionPane.showMessageDialog(null, "현재 연체자 정보가 없습니다.", "조회 결과 없음", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "연체자 조회 중 오류가 발생했습니다: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                try {
+                    if (rs != null) rs.close();
+                    dbConnect.DB_Disconnect();
+                } catch (SQLException closeEx) {
+                    closeEx.printStackTrace();
+                }
+            }
+        });
+    }
 
 
     // 근로학생 테이블에서 시급 가져오기
@@ -331,6 +387,11 @@ public class employeePage {
     // 근로정보 조회
     private static void loadWorkInfo(Connection con, String workerId) {
         try {
+            if (con == null || con.isClosed()) {
+                dbConnect.DB_Connect(); // 연결 재설정
+                con = dbConnect.con;   // 최신 연결 객체 갱신
+            }
+
             String query = "SELECT 근무번호, TO_CHAR(근무일자, 'YYYY-MM-DD') AS 근무일자, 근무시간, 일일급여 " +
                     "FROM 근로정보 WHERE 근로ID = ?";
             PreparedStatement pstmt = con.prepareStatement(query);
@@ -360,6 +421,8 @@ public class employeePage {
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "근로정보를 불러오는 중 오류가 발생했습니다: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            dbConnect.DB_Disconnect(); // 연결 닫기
         }
     }
 
@@ -400,3 +463,4 @@ public class employeePage {
         }
     }
 }
+

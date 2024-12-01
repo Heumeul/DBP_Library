@@ -16,11 +16,11 @@ public class userPage {
         String titleSuffix = "님 도서 이용 현황";
 
         JLabel titleLabel = new JLabel(userName + titleSuffix, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("돋움", Font.BOLD, 16));
+        titleLabel.setFont(new Font("돋움", Font.BOLD, 18));
         titleLabel.setBounds(50, 30, 300, 30);
         frame.add(titleLabel);
 
-        JLabel back = new JLabel("<이전");
+        JLabel back = new JLabel("< 이전");
         back.setBounds(13, 10, 60, 30);
         back.setCursor(new Cursor(Cursor.HAND_CURSOR));
         frame.add(back);
