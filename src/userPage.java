@@ -16,11 +16,11 @@ public class userPage {
         String titleSuffix = "님 도서 이용 현황";
 
         JLabel titleLabel = new JLabel(userName + titleSuffix, SwingConstants.CENTER);
-        titleLabel.setFont(new Font("돋움", Font.BOLD, 18));
+        titleLabel.setFont(new Font("돋움", Font.BOLD, 16));
         titleLabel.setBounds(50, 30, 300, 30);
         frame.add(titleLabel);
 
-        JLabel back = new JLabel("< 이전");
+        JLabel back = new JLabel("<이전");
         back.setBounds(13, 10, 60, 30);
         back.setCursor(new Cursor(Cursor.HAND_CURSOR));
         frame.add(back);
@@ -36,7 +36,7 @@ public class userPage {
 
         JPanel userPanel = new JPanel();
         userPanel.setLayout(new BorderLayout());
-        userPanel.setBounds(13, 80, 360, 300); // 위치와 크기 설정 (필수)
+        userPanel.setBounds(13, 80, 360, 300); // 위치와 크기 설정
         frame.add(userPanel);
 
         // 테이블 생성
@@ -51,23 +51,51 @@ public class userPage {
         returnButton.setBounds(13, 400, 360, 30);
         frame.add(returnButton);
 
-        try {
-            Connect dbConnection = new Connect();
-            dbConnection.DB_Connect();
+        Connect dbConnection = new Connect();
+        dbConnection.DB_Connect();
 
+        // 데이터 로드 및 테이블 초기화
+        refreshTableData(userId, overdueModel, dbConnection);
+
+        // 반납 버튼 동작 정의
+        returnButton.addActionListener(e -> {
+            int selectedRow = overdueTable.getSelectedRow();
+            if (selectedRow != -1) {
+                // 대출번호가 올바르게 가져오는지 확인
+                Object loanIdObj = overdueTable.getValueAt(selectedRow, 0);
+                if (loanIdObj instanceof Integer) {
+                    int loanId = (int) loanIdObj;
+                    System.out.println("선택된 대출번호: " + loanId);
+                    boolean isReturned = dbConnection.returnBook(loanId, userId);
+                    if (isReturned) {
+                        overdueModel.removeRow(selectedRow);
+                        JOptionPane.showMessageDialog(frame, "선택된 도서가 성공적으로 반납되었습니다.");
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "도서 반납 처리에 실패했습니다.");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(frame, "대출번호 형식이 올바르지 않습니다.");
+                }
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    // 테이블 새로고침 메서드
+    private static void refreshTableData(int userId, DefaultTableModel overdueModel, Connect dbConnection) {
+        overdueModel.setRowCount(0); // 기존 테이블 데이터 초기화
+
+        try {
             ResultSet rs;
 
             if (String.valueOf(userId).length() == 5) {
-                rs = dbConnection.getStaffLoanData(userId);
-            } else if (String.valueOf(userId).length() == 6) {
-                rs = dbConnection.getStudentLoanData(userId);
+                rs = dbConnection.getStaffLoanData(userId); // 교직원 대출 데이터 가져오기
             } else {
-                JOptionPane.showMessageDialog(frame, "잘못된 ID 형식입니다.", "오류", JOptionPane.ERROR_MESSAGE);
-                frame.dispose();
-                return;
+                rs = dbConnection.getStudentLoanData(userId); // 학생 대출 데이터 가져오기
             }
 
-            // ResultSet 데이터를 테이블에 추가
+            // 새 데이터를 테이블에 추가
             while (rs != null && rs.next()) {
                 overdueModel.addRow(new Object[]{
                         rs.getInt("대출번호"),
@@ -78,29 +106,7 @@ public class userPage {
                 });
             }
         } catch (SQLException e) {
-            System.out.println("Error loading table data: " + e.getMessage());
+            System.out.println("Error refreshing table data: " + e.getMessage());
         }
-
-        Connect dbConnection = new Connect();
-        dbConnection.DB_Connect();
-
-        returnButton.addActionListener(e -> {
-            int selectedRow = overdueTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int loanId = (int) overdueTable.getValueAt(selectedRow, 0);
-                boolean isReturned = dbConnection.returnBook(loanId);
-
-                if (isReturned) {
-                    overdueModel.removeRow(selectedRow);
-                    JOptionPane.showMessageDialog(frame, "선택된 도서가 성공적으로 반납되었습니다.");
-                } else {
-                    JOptionPane.showMessageDialog(frame, "도서 반납 처리에 실패했습니다.");
-                }
-            } else {
-                JOptionPane.showMessageDialog(frame, "반납할 도서를 선택하세요.");
-            }
-        });
-
-        frame.setVisible(true);
     }
 }
