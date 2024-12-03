@@ -232,8 +232,10 @@ public class mainPage {
                     // ORA-20001 또는 ORA-20002 등의 사용자 정의 예외 코드 처리
                     if (errorMessage.contains("ORA-20002")) {
                         JOptionPane.showMessageDialog(frame, "최대 대출 권수를 초과하여 대출이 불가능합니다.", "대출 불가", JOptionPane.WARNING_MESSAGE);
-                    } else if (errorMessage.contains("ORA-20003") || errorMessage.contains("ORA-20001")) {
+                    } else if (errorMessage.contains("ORA-20001")) {
                         JOptionPane.showMessageDialog(frame, "연체 도서가 있어 대출이 불가능합니다.", "대출 불가", JOptionPane.WARNING_MESSAGE);
+                    } else if (errorMessage.contains("ORA-20003")) {
+                        JOptionPane.showMessageDialog(frame, "이미 대출중인 도서입니다.", "대출 불가", JOptionPane.WARNING_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(frame, "대출 처리 중 알 수 없는 오류가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     }
