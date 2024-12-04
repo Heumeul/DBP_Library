@@ -386,45 +386,47 @@ public class employeePage {
 
     // 근로정보 조회
     private static void loadWorkInfo(Connection con, String workerId) {
-        try {
-            if (con == null || con.isClosed()) {
-                dbConnect.DB_Connect(); // 연결 재설정
-                con = dbConnect.con;   // 최신 연결 객체 갱신
-            }
-
-            String query = "SELECT 근무번호, TO_CHAR(근무일자, 'YYYY-MM-DD') AS 근무일자, 근무시간, 일일급여 " +
-                    "FROM 근로정보 WHERE 근로ID = ?";
-            PreparedStatement pstmt = con.prepareStatement(query);
-            pstmt.setString(1, workerId);
-            ResultSet rs = pstmt.executeQuery();
-
-            // 기존 데이터 초기화
-            workInfoModel.setRowCount(0);
-
-            // 결과 데이터 추가
-            while (rs.next()) {
-                int workNumber = rs.getInt("근무번호");
-                String workDate = rs.getString("근무일자");
-                int workHours = rs.getInt("근무시간");
-                int dailySalary = rs.getInt("일일급여");
-
-                // 일일급여 포맷팅
-                NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.KOREA);
-                String formattedSalary = numberFormat.format(dailySalary);
-
-                workInfoModel.addRow(new Object[]{
-                        workNumber, workDate, workHours + "시간", formattedSalary + "원"
-                });
-            }
-            rs.close();
-            pstmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "근로정보를 불러오는 중 오류가 발생했습니다: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            dbConnect.DB_Disconnect(); // 연결 닫기
+    try {
+        if (con == null || con.isClosed()) {
+            dbConnect.DB_Connect(); // 연결 재설정
+            con = dbConnect.con;   // 최신 연결 객체 갱신
         }
+
+        // Statement로 쿼리 작성
+        String query = "SELECT 근무번호, TO_CHAR(근무일자, 'YYYY-MM-DD') AS 근무일자, 근무시간, 일일급여 " +
+                "FROM 근로정보 WHERE 근로ID = '" + workerId + "'";
+
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query);
+
+        // 기존 데이터 초기화
+        workInfoModel.setRowCount(0);
+
+        // 결과 데이터 추가
+        while (rs.next()) {
+            int workNumber = rs.getInt("근무번호");
+            String workDate = rs.getString("근무일자");
+            int workHours = rs.getInt("근무시간");
+            int dailySalary = rs.getInt("일일급여");
+
+            // 일일급여 포맷팅
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.KOREA);
+            String formattedSalary = numberFormat.format(dailySalary);
+
+            workInfoModel.addRow(new Object[]{
+                    workNumber, workDate, workHours + "시간", formattedSalary + "원"
+            });
+        }
+        rs.close();
+        stmt.close();
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(null, "근로정보를 불러오는 중 오류가 발생했습니다: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+    } finally {
+        dbConnect.DB_Disconnect(); // 연결 닫기
     }
+}
+
 
     // ComboBox 업데이트 메서드
     private static void updateComboBoxOptions(JComboBox<String> yearCombo, JComboBox<String> monthCombo) {
