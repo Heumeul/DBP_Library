@@ -189,29 +189,44 @@ public class employeePage {
             }
 
             try {
+                // DB 연결
+                Connect dbConnect = new Connect();
                 dbConnect.DB_Connect();
 
-                CallableStatement cstmt = dbConnect.con.prepareCall("{call get_monthly_salary(?, ?, ?, ?)}");
-                cstmt.setString(1, enteredId); // 근로ID
-                cstmt.setInt(2, Integer.parseInt(selectedYear)); // 연도
-                cstmt.setInt(3, Integer.parseInt(selectedMonth)); // 월
-                cstmt.registerOutParameter(4, Types.INTEGER); // 출력 파라미터 등록
+                // 저장 프로시저 호출
+                totalSalary = dbConnect.getMonthlySalary(
+                        enteredId,
+                        Integer.parseInt(selectedYear),
+                        Integer.parseInt(selectedMonth)
+                );
 
-                cstmt.execute();
-                totalSalary = cstmt.getInt(4);
-
-                cstmt.close();
+                // DB 연결 해제
                 dbConnect.DB_Disconnect();
             } catch (SQLException ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(null, "월급 조회 중 오류가 발생했습니다: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(
+                        null,
+                        "월급 조회 중 오류가 발생했습니다: " + ex.getMessage(),
+                        "오류",
+                        JOptionPane.ERROR_MESSAGE
+                );
             }
 
             // 결과 출력
-            dateLabel.setText(selectedYear + "년 " + selectedMonth + "월");
-            salaryLabel.setText("총 월급: " + String.format("%,d원", totalSalary));
+            if (totalSalary > 0) {
+                dateLabel.setText(selectedYear + "년 " + selectedMonth + "월");
+                salaryLabel.setText("총 월급: " + String.format("%,d원", totalSalary));
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "선택한 월에 대한 근무 기록이 없습니다.",
+                        "조회 결과 없음",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }
         });
 
+        // 탭에 월급 조회 추가
         tabbedPane.addTab("월급조회", salaryPanel);
 
         //근로정보 등록 및 DB 업데이트
@@ -316,7 +331,6 @@ public class employeePage {
                     JOptionPane.showMessageDialog(null, "저장 프로시저 실행 결과가 없습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-
                 boolean hasData = false;
                 while (rs.next()) {
                     hasData = true;
