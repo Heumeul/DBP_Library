@@ -210,6 +210,8 @@ public class mainPage {
                         return;
                     }
 
+                    // 트랜잭션 시작
+                    dbConnect.con.setAutoCommit(false); //자동 커밋 비활성화
                     // 최대 대출번호 가져오기
                     int loanId = getNextLoanId(dbConnect.con, userId);
 
@@ -224,6 +226,8 @@ public class mainPage {
 
                     pstmt.executeUpdate();
 
+                    //트랜잭션 커밋
+                    dbConnect.con.commit();
                     JOptionPane.showMessageDialog(frame, "도서 대출이 성공적으로 완료되었습니다.", "대출 완료", JOptionPane.INFORMATION_MESSAGE);
                 } catch (SQLException ex) {
                     // 트리거에서 발생한 예외 처리
